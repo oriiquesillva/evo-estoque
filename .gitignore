@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Anotações de estudo e preparação para entrevista (não versionar)
+estudos/
+*.study.md
+ROADMAP.md
