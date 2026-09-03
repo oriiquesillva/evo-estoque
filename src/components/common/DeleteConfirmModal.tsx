@@ -1,4 +1,5 @@
-import { AlertCircle, Trash2, X } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { AlertCircle, Trash2, X, Loader2 } from 'lucide-react';
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -15,12 +16,47 @@ export function DeleteConfirmModal({
   onCancel,
   isLoading = false,
 }: DeleteConfirmModalProps) {
+  const cancelBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Foca o botão cancelar para segurança contra exclusão acidental
+    cancelBtnRef.current?.focus();
+
+    // Fecha o modal ao pressionar a tecla Escape
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isLoading) {
+        onCancel();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Trava o scroll da página de fundo enquanto o modal estiver aberto
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen, isLoading, onCancel]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={(e) => {
+        // Fecha ao clicar fora da caixa do modal
+        if (e.target === e.currentTarget && !isLoading) {
+          onCancel();
+        }
+      }}
+    >
       <div
-        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100 relative"
+        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -29,7 +65,7 @@ export function DeleteConfirmModal({
           type="button"
           onClick={onCancel}
           disabled={isLoading}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer disabled:opacity-40"
           aria-label="Fechar"
         >
           <X className="w-5 h-5" />
@@ -47,13 +83,14 @@ export function DeleteConfirmModal({
             <p className="text-sm text-slate-600 leading-relaxed mb-4">
               Tem certeza de que deseja excluir o produto{' '}
               <span className="font-semibold text-slate-900">"{productName}"</span>?
-              Esta ação não poderá ser desfeita.
+              Esta ação removerá permanentemente o item do catálogo.
             </p>
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-slate-100">
           <button
+            ref={cancelBtnRef}
             type="button"
             onClick={onCancel}
             disabled={isLoading}
@@ -68,8 +105,17 @@ export function DeleteConfirmModal({
             disabled={isLoading}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-sm transition-colors cursor-pointer disabled:opacity-50"
           >
-            <Trash2 className="w-4 h-4" />
-            <span>{isLoading ? 'Excluindo...' : 'Sim, Excluir'}</span>
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Excluindo...</span>
+              </>
+            ) : (
+              <>
+                <Trash2 className="w-4 h-4" />
+                <span>Sim, Excluir</span>
+              </>
+            )}
           </button>
         </div>
       </div>
